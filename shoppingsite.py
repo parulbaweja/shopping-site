@@ -6,10 +6,11 @@ put melons in a shopping cart.
 Authors: Joel Burton, Christian Fernandez, Meggie Mahnken, Katie Byers.
 """
 
-from flask import Flask, render_template, redirect, flash, session
+from flask import Flask, render_template, redirect, flash, session, request
 import jinja2
 
 import melons
+import customers
 
 app = Flask(__name__)
 app.secret_key = "tumblinmelon"
@@ -132,6 +133,23 @@ def process_login():
     dictionary, look up the user, and store them in the session.
     """
 
+    email = request.form.get('email')
+    password = request.form.get('password')
+    print email, password
+    if customers.get_by_email(email):
+        print customers.get_by_email(email).password
+        if customers.get_by_email(email).password == password:
+            session['logged_in_customer_email'] = email
+            flash('Login successful!')
+            return redirect('/melons')
+            print session
+        else:
+            flash('Incorrect password.')
+            return redirect('/login')
+    else:
+        flash('No customer with that email found')
+        return redirect('/login')
+
     # TODO: Need to implement this!
 
     # The logic here should be something like:
@@ -146,8 +164,6 @@ def process_login():
     # - if they don't, flash a failure message and redirect back to "/login"
     # - do the same if a Customer with that email doesn't exist
 
-    return "Oops! This needs to be implemented"
-
 
 @app.route("/checkout")
 def checkout():
@@ -160,5 +176,14 @@ def checkout():
     return redirect("/melons")
 
 
+@app.route('/logout')
+def process_logout():
+
+    del session['logged_in_customer_email']
+
+    flash('Logged out.')
+    return redirect('/melons')
+
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", debug=True)
